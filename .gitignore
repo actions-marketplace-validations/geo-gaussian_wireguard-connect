@@ -1,0 +1,26 @@
+# Dependencies
+node_modules/
+
+# Build & test artifacts (NOTE: dist/ MUST NOT be ignored for GitHub Actions)
+coverage/
+*.tsbuildinfo
+.nyc_output/
+
+# Environment & local secrets
+.env
+.env.*
+*.conf
+*.key
+
+# Logs
+logs/
+*.log
+npm-debug.log*
+pnpm-debug.log*
+
+# OS & Editor files
+desktop.ini
+.DS_Store
+Thumbs.db
+.idea/
+*.swp

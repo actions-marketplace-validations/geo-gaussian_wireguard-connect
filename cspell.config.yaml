@@ -1,0 +1,49 @@
+version: '0.2'
+language: en-GB
+
+files:
+  - '**/*.cjs'
+  - '**/*.json'
+  - '**/*.md'
+  - '**/*.mjs'
+  - '**/*.ts'
+  - '**/*.txt'
+  - '**/*.yaml'
+  - '**/*.yml'
+
+ignorePaths:
+  - .git
+  - node_modules
+  - dist
+  - coverage
+  - pnpm-lock.yaml
+  - '**/pnpm-lock.yaml'
+  - .specify/scripts/**
+  - .specify/templates/**
+  - .specify/workflows/speckit/**
+  - .github/skills/**
+
+dictionaryDefinitions:
+  - name: project-terms
+    path: .cspell/project-terms.txt
+    addWords: true
+
+dictionaries:
+  - project-terms
+  - en_GB
+  - node
+  - softwareTerms
+  - typescript
+
+words:
+  - GitHub
+  - TypeScript
+  - WireGuard
+  - cspell
+  - pnpm
+  - prettier
+  - SpecKit
+
+useGitignore: true
+enableGlobDot: true
+allowCompoundWords: true

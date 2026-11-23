@@ -1,0 +1,10 @@
+WireGuard
+SpecKit
+pnpm
+Prettier
+TypeScript
+ts-jest
+ncc
+Corepack
+cspell
+rebundling
