@@ -1,7 +1,7 @@
 # 📋 Business Requirements (Draft)
 
-**Status:** Draft; an Ubuntu MVP is implemented but not acceptance-tested on
-a real runner.
+**Status:** Draft; an Ubuntu MVP is implemented with limited runner-local
+integration coverage, but has not been accepted for production.
 
 ## 🎯 Objective
 
@@ -32,7 +32,7 @@ end of the job.
 - User-controlled values must be validated and passed to commands as separate
   arguments, not interpolated into shell strings.
 - Teardown must attempt all independent cleanup steps and report failures.
-- Bundled action output must remain synchronised with its TypeScript source.
+- Release bundles must remain synchronised with their TypeScript source.
 - Documentation must distinguish verified behaviour from planned behaviour.
 
 ## 🚫 Out of Scope
@@ -45,5 +45,5 @@ end of the job.
 ## 🚧 Current Status
 
 This document records project intent. The Ubuntu MVP implements the intended
-lifecycle with best-effort cleanup, but no platform has yet been accepted
-through real runner integration testing.
+lifecycle with best-effort cleanup. Runner-local integration tests provide
+limited Ubuntu coverage, but no platform has been accepted for production.

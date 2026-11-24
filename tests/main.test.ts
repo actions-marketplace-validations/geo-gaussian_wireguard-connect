@@ -14,6 +14,9 @@ jest.mock('@actions/core', () => ({
 jest.mock('node:fs');
 jest.mock('../src/platforms/linux', () => ({
   ensureWireGuard: jest.fn(),
+  createConfig: jest.fn(),
+  writeConfig: jest.fn(),
+  removeConfig: jest.fn(),
   up: jest.fn(),
   down: jest.fn(),
   configureDns: jest.fn(),
@@ -28,6 +31,7 @@ let inputs: Record<string, string>;
 
 beforeEach(() => {
   jest.clearAllMocks();
+  jest.mocked(core.saveState).mockReset();
   Object.defineProperty(process, 'platform', { value: 'linux', configurable: true });
   process.env.RUNNER_ENVIRONMENT = 'github-hosted';
   inputs = {
@@ -42,7 +46,6 @@ beforeEach(() => {
   };
   jest.mocked(core.getInput).mockImplementation((name) => inputs[name] ?? '');
   jest.mocked(fs.readFileSync).mockReturnValue('ID=ubuntu\n');
-  jest.mocked(fs.mkdtempSync).mockReturnValue('/tmp/wireguard-connect-test');
 });
 
 afterAll(() => {
@@ -56,10 +59,9 @@ it('saves cleanup state, creates a restricted file, and configures optional feat
 
   expect(core.setSecret).toHaveBeenCalledWith(privateKey);
   expect(linux.ensureWireGuard).toHaveBeenCalledTimes(1);
-  expect(fs.writeFileSync).toHaveBeenCalledWith(
-    expect.stringMatching(/^\/tmp\/wireguard-connect-test\/wgc[0-9a-f]{8}\.conf$/),
+  expect(linux.writeConfig).toHaveBeenCalledWith(
+    expect.stringMatching(/^\/etc\/wireguard\/wgc[0-9a-f]{8}\.conf$/),
     expect.stringContaining(`PrivateKey = ${privateKey}`),
-    { flag: 'wx', mode: 0o600 },
   );
   expect(core.saveState).toHaveBeenCalledWith('tunnelUp', 'true');
   expect(core.saveState).toHaveBeenCalledWith('dnsConfigured', 'true');
@@ -105,6 +107,42 @@ it('does not mark the tunnel active if startup fails', async () => {
   expect(core.setFailed).toHaveBeenCalledWith('startup failed');
 });
 
+it('does not remove an existing configuration when exclusive creation fails', async () => {
+  jest.mocked(linux.createConfig).mockRejectedValueOnce(new Error('configuration exists'));
+  await run();
+  expect(core.saveState).not.toHaveBeenCalledWith('configPath', expect.any(String));
+  expect(linux.removeConfig).not.toHaveBeenCalled();
+  expect(core.setFailed).toHaveBeenCalledWith('configuration exists');
+});
+
+it('removes the empty configuration if recording its path fails', async () => {
+  jest.mocked(core.saveState).mockImplementation((name) => {
+    if (name === 'configPath') throw new Error('state unavailable');
+  });
+  await run();
+  expect(linux.removeConfig).toHaveBeenCalledTimes(1);
+  expect(linux.writeConfig).not.toHaveBeenCalled();
+  expect(core.setFailed).toHaveBeenCalledWith('state unavailable');
+});
+
+it.each([new Error('cleanup failed'), 'cleanup failed'])(
+  'reports a configuration cleanup failure without hiding the state error: %p',
+  async (cleanupError) => {
+    jest.mocked(core.saveState).mockImplementation((name) => {
+      if (name === 'configPath') throw new Error('state unavailable');
+    });
+    jest.mocked(linux.removeConfig).mockRejectedValueOnce(cleanupError);
+
+    await run();
+
+    expect(core.error).toHaveBeenCalledWith(
+      'Failed to remove empty configuration after saving state failed: cleanup failed',
+    );
+    expect(linux.writeConfig).not.toHaveBeenCalled();
+    expect(core.setFailed).toHaveBeenCalledWith('state unavailable');
+  },
+);
+
 it('records DNS cleanup before a partial DNS setup fails', async () => {
   jest.mocked(linux.configureDns).mockRejectedValueOnce(new Error('DNS setup failed'));
   await run();
@@ -120,4 +158,29 @@ it('tears down the tunnel immediately if recording its state fails', async () =>
   await run();
   expect(linux.down).toHaveBeenCalledTimes(1);
   expect(core.setFailed).toHaveBeenCalledWith('state unavailable');
+});
+
+it.each([new Error('cleanup failed'), 'cleanup failed'])(
+  'reports a tunnel cleanup failure without hiding the state error: %p',
+  async (cleanupError) => {
+    jest.mocked(core.saveState).mockImplementation((name) => {
+      if (name === 'tunnelUp') throw new Error('state unavailable');
+    });
+    jest.mocked(linux.down).mockRejectedValueOnce(cleanupError);
+
+    await run();
+
+    expect(core.error).toHaveBeenCalledWith(
+      'Failed to stop tunnel after saving state failed: cleanup failed',
+    );
+    expect(linux.configureDns).not.toHaveBeenCalled();
+    expect(core.setFailed).toHaveBeenCalledWith('state unavailable');
+  },
+);
+
+it('reports a non-Error setup failure', async () => {
+  jest.mocked(linux.ensureWireGuard).mockRejectedValueOnce('installation failed');
+  await run();
+  expect(core.setFailed).toHaveBeenCalledWith('installation failed');
+  expect(linux.createConfig).not.toHaveBeenCalled();
 });
