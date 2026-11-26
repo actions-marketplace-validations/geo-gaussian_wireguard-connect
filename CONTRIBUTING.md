@@ -1,12 +1,12 @@
 # 🤝 Contributing
 
-Thanks for helping build WireGuard Connect. The project is currently an
-experimental Ubuntu MVP, so contributions should distinguish runner-local
-test coverage from unverified external connectivity and production support.
+Thanks for helping build WireGuard Connect. Contributions should distinguish
+runner-local test coverage from external-peer evidence.
 
 ## 🚀 Getting Started
 
-Use Node.js 24 or later (Node.js 26 LTS recommended) and pnpm 12.21.0:
+Use Node.js 24 or later (Node.js 26 LTS recommended) and pnpm 12.21.0.
+CI tests Node.js 24, the action runtime. To set up the checkout:
 
 ```sh
 pnpm install
@@ -57,5 +57,4 @@ required by Spec Kit-managed assets.
 ## 📬 Pull Requests
 
 Describe the change and its verification clearly. Mark tests or platform
-behaviour that remains unverified; do not describe the MVP as production
-ready.
+behaviour that remains unverified.

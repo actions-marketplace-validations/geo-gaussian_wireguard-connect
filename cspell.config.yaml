@@ -50,12 +50,25 @@ words:
   - prettier
   - resolv
   - SpecKit
+  - urandom
   - veth
   - wgcpeer
 
 # Preserve the upstream Spec Kit command name.
 ignoreRegExpList:
   - '/speckit-analyze/g'
+
+# Preserve GitHub identifiers only in the files where they are used.
+# cspell:disable
+overrides:
+  - filename: action.yaml
+    ignoreRegExpList:
+      - '/^\s*color\s*:/gm'
+  - filename: .github/workflows/*.yaml
+    ignoreRegExpList:
+      - '/actions\/(?:upload|download)-artifact\b/g'
+      - '/\btypes:\s*\[(?:[a-z_]+,\s*)*synchronize(?:,\s*[a-z_]+)*\]/g'
+# cspell:enable
 
 # cspell:disable
 flagWords:

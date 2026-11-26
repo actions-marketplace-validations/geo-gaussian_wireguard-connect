@@ -13,13 +13,19 @@ permissions:
 
 jobs:
   checks:
+    needs: build
     uses: ./.github/workflows/build-and-test.yaml
+    secrets: inherit
     with:
-      run_integration_tests: false
+      run-external-integration-tests: true
+      release-bundle-name: release-bundles
 
-  build:
-    name: Build release bundles
+  verify-ci:
+    name: Verify main CI
     runs-on: ubuntu-latest
+    permissions:
+      actions: read
+      contents: read
     steps:
       - name: Check out source
         uses: actions/checkout@v7
@@ -30,12 +36,27 @@ jobs:
         env:
           RELEASE_TAG: ${{ inputs.tag }}
         run: sh scripts/validate-release.sh
+      - name: Verify successful CI for this commit
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: node scripts/verify-main-ci.mts
+
+  build:
+    name: Build release bundles
+    needs: verify-ci
+    runs-on: ubuntu-latest
+    steps:
+      - name: Check out source
+        uses: actions/checkout@v7
+        with:
+          ref: ${{ github.sha }}
+          persist-credentials: false
       - name: Build bundles
         uses: ./.github/actions/build-bundles
       - name: Check both bundles exist
         run: test -s dist/main/index.js && test -s dist/post/index.js
       - name: Save release bundles
-        uses: actions/upload-artifact@v7 # cspell:disable-line
+        uses: actions/upload-artifact@v7
         with:
           name: release-bundles
           path: |
@@ -44,34 +65,9 @@ jobs:
           if-no-files-found: error
           retention-days: 1
 
-  integration:
-    name: Test release bundles (${{ matrix.scenario }})
-    needs: build
-    runs-on: ubuntu-latest
-    timeout-minutes: 15
-    strategy:
-      fail-fast: false
-      matrix:
-        scenario: [success, failure]
-    steps:
-      - name: Check out source
-        uses: actions/checkout@v7
-        with:
-          ref: ${{ github.sha }}
-          persist-credentials: false
-      - name: Download release bundles
-        uses: actions/download-artifact@v8 # cspell:disable-line
-        with:
-          name: release-bundles
-          path: dist
-      - name: Run integration scenario
-        uses: ./.github/actions/integration-test
-        with:
-          scenario: ${{ matrix.scenario }}
-
   tag:
     name: Create release tag
-    needs: [checks, build, integration]
+    needs: [checks, build]
     if: github.ref == 'refs/heads/main'
     runs-on: ubuntu-latest
     permissions:
@@ -83,7 +79,7 @@ jobs:
           ref: ${{ github.sha }}
           persist-credentials: true
       - name: Download tested bundles
-        uses: actions/download-artifact@v8 # cspell:disable-line
+        uses: actions/download-artifact@v8
         with:
           name: release-bundles
           path: dist
