@@ -39,7 +39,7 @@ jobs:
       coverage-upload-outcome: ${{ steps.upload-coverage.outcome }}
     steps:
       - name: Check out repository
-        uses: actions/checkout@v7
+        uses: actions/checkout@v7.0.1
         with:
           repository: ${{ job.workflow_repository }}
           ref: ${{ job.workflow_sha }}
@@ -117,7 +117,7 @@ jobs:
         scenario: [success, failure]
     steps:
       - name: Check out the tested revision
-        uses: actions/checkout@v7
+        uses: actions/checkout@v7.0.1
         with:
           repository: ${{ job.workflow_repository }}
           ref: ${{ job.workflow_sha }}
@@ -164,7 +164,7 @@ jobs:
       cancel-in-progress: false
     steps:
       - name: Check out the tested revision
-        uses: actions/checkout@v7
+        uses: actions/checkout@v7.0.1
         with:
           repository: ${{ job.workflow_repository }}
           ref: ${{ job.workflow_sha }}
